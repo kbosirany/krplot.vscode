@@ -1,0 +1,60 @@
+{
+  "name": "rplot-panel",
+  "displayName": "R Plots panel",
+  "description": "Dedicated R plots view (httpgd) outside the editor area",
+  "version": "0.1.0",
+  "publisher": "korlando",
+  "license": "MIT",
+  "engines": { "vscode": "^1.90.0" },
+  "extensionKind": ["workspace"],
+  "main": "./extension.js",
+  "activationEvents": ["onStartupFinished"],
+  "contributes": {
+    "viewsContainers": {
+      "panel": [
+        { "id": "rplotPanel", "title": "R Plots", "icon": "media/plot.svg" }
+      ]
+    },
+    "views": {
+      "rplotPanel": [
+        { "type": "webview", "id": "rplotPanel.plots", "name": "R Plots" }
+      ]
+    },
+    "commands": [
+      {
+        "command": "rplotPanel.reload",
+        "title": "Reload R Plots",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "rplotPanel.openExternal",
+        "title": "Open R Plots in Browser",
+        "icon": "$(link-external)"
+      }
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "rplotPanel.reload",
+          "when": "view == rplotPanel.plots",
+          "group": "navigation"
+        },
+        {
+          "command": "rplotPanel.openExternal",
+          "when": "view == rplotPanel.plots",
+          "group": "navigation"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "R Plots panel",
+      "properties": {
+        "rplotPanel.revealOnNewSession": {
+          "type": "boolean",
+          "default": true,
+          "description": "Reveal the R Plots view when an R session opens its first plot."
+        }
+      }
+    }
+  }
+}
