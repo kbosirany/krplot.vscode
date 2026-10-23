@@ -121,12 +121,16 @@ default graphics device and tells krplot where to find it.
 
 ### 2. If you use the R extension (vscode-R)
 
-Stop vscode-R from opening its own plot viewer in the editor area, in your
+vscode-R starts its own plot viewer in the editor area, after your
+`.Rprofile` has run. Make it leave the graphics device to krplot, in your
 VS Code `settings.json`:
 
 ```json
 "r.plot.backend": "native"
 ```
+
+krplot shows a notification to set it for you when vscode-R is installed
+and this setting is missing.
 
 ### 3. Draw a plot
 
@@ -205,7 +209,11 @@ server.
   `.Rprofile` block was added, or httpgd is not installed. Open a new R
   terminal and check `getOption("device")` returns a function.
 - **Plots still open in an editor tab**: set `"r.plot.backend": "native"`
-  (vscode-R), then open a new R terminal.
+  (vscode-R), then open a new R terminal. Check that no workspace
+  setting overrides it.
+- **Plots open in an X11 or Quartz window**: check the `.Rprofile` ends
+  with a newline after the last `}`; some R consoles (arf) drop a last
+  line without one.
 - **"R session not reachable"**: the R session displayed was closed. Draw
   a plot in another session, or run `R Plots: Reload`.
 - **Several R sessions**: the pane shows the last session that opened a

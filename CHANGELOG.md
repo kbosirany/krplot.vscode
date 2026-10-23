@@ -4,6 +4,21 @@ All notable changes to krplot are documented in this file. The format
 follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the
 project uses [Semantic Versioning](https://semver.org/).
 
+## [0.4.1] - 2026-10-23
+
+### Fixed
+
+- Plots opened in an editor tab when the R extension (vscode-R) is
+  installed: its session replaces the krplot device after the
+  `.Rprofile` has run. krplot now detects it and offers to set
+  `"r.plot.backend": "native"`.
+
+### Added
+
+- Tests: unit tests of the R/extension contract, and an end-to-end test
+  running the README `.Rprofile` block in R with httpgd.
+- CI runs the tests on Linux, Windows and macOS.
+
 ## [0.4.0] - 2026-10-23
 
 First public release on the Visual Studio Marketplace.

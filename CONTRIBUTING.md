@@ -8,6 +8,8 @@ on [GitHub](https://github.com/kbosirany/krplot.vscode/issues).
 | Path | Content |
 |------|---------|
 | `extension.js` | Extension host: watches `~/.krplot/url`, polls httpgd, saves files, opens the separate window |
+| `session.js` | Contract with the R side (`~/.krplot/url`) and vscode-R check, without the VS Code API |
+| `test/` | Unit tests and end-to-end test of the README `.Rprofile` block |
 | `media/view.js` | Webview: toolbar, layouts, plot rendering, PNG rasterization |
 | `media/view.css` | Webview styles (VS Code theme variables) |
 | `media/plot.svg` | Icon of the panel view |
@@ -26,6 +28,18 @@ JavaScript using the VS Code API only.
 
 Use *Developer: Reload Window* in the extension window after a change, and
 *Developer: Open Webview Developer Tools* to debug the view.
+
+## Tests
+
+```sh
+npm test
+```
+
+The end-to-end test runs the `.Rprofile` block of the README in an
+interactive R session and checks httpgd serves the plot. It needs R and
+httpgd, and is skipped without them (set `KRPLOT_REQUIRE_R=1` to make it
+fail instead, as on the CI). `KRPLOT_R` and `KRPLOT_RSCRIPT` choose the R
+executables.
 
 ## Package locally
 

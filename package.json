@@ -2,7 +2,7 @@
   "name": "krplot",
   "displayName": "krplot: R Plots pane",
   "description": "An RStudio/Positron-like Plots pane for R in VS Code, powered by httpgd: plot history, aspect ratio control, SVG/PNG export, separate window.",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "publisher": "kbosirany",
   "author": {
     "name": "Kevin Bosirany Orlando"
@@ -43,6 +43,9 @@
     "workspace"
   ],
   "main": "./extension.js",
+  "scripts": {
+    "test": "node --test"
+  },
   "activationEvents": [
     "onStartupFinished"
   ],
