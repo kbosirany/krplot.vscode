@@ -3,6 +3,7 @@
 .vscode/**
 images/icon.svg
 images/screenshot.png
+images/screenshot-widget.png
 CONTRIBUTING.md
 PUBLISHING.md
 node_modules/**

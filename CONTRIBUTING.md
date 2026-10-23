@@ -7,10 +7,16 @@ on [GitHub](https://github.com/kbosirany/krplot.vscode/issues).
 
 | Path | Content |
 |------|---------|
+<<<<<<< HEAD
 | `extension.js` | Extension host: watches `~/.krplot/url`, polls httpgd, saves files, opens the separate window |
 | `session.js` | Contract with the R side (`~/.krplot/url`) and vscode-R check, without the VS Code API |
 | `test/` | Unit tests and end-to-end test of the README `.Rprofile` block |
 | `media/view.js` | Webview: toolbar, layouts, plot rendering, PNG rasterization |
+=======
+| `extension.js` | Extension host: installs `~/.krplot/init.R`, polls httpgd and `~/.krplot/viewer`, serves HTML widgets, saves files, opens the separate window |
+| `r/init.R` | R side: httpgd device and R viewer, sourced from `~/.Rprofile` |
+| `media/view.js` | Webview: toolbar, layouts, plots and widget iframes, PNG rasterization |
+>>>>>>> ea4ecfa (feat: show HTML widgets (leaflet, plotly, ...) in the pane)
 | `media/view.css` | Webview styles (VS Code theme variables) |
 | `media/plot.svg` | Icon of the panel view |
 | `images/` | Marketplace icon and README screenshot |
@@ -24,7 +30,7 @@ JavaScript using the VS Code API only.
 2. Press `F5` (*Run Extension*): a new VS Code window starts with the
    extension loaded.
 3. In that window, open an R terminal (with the `.Rprofile` block of the
-   README) and draw a plot.
+   README), draw a plot and print a widget.
 
 Use *Developer: Reload Window* in the extension window after a change, and
 *Developer: Open Webview Developer Tools* to debug the view.

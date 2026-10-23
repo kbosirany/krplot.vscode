@@ -1,10 +1,13 @@
-// krplot: shows the plots of the current R session (httpgd device) in a
-// dedicated view (bottom panel or secondary sidebar) or in a separate
-// window, never in the editor area. The R side writes the httpgd URL and
-// device size to ~/.krplot/url; this host polls httpgd and drives the
-// webviews.
+// krplot: shows the plots (httpgd device) and HTML widgets (leaflet,
+// plotly, DT, ...) of the current R session in a dedicated view (bottom
+// panel or secondary sidebar) or in a separate window, never in the editor
+// area. The R side (r/init.R, installed in ~/.krplot) writes the httpgd URL
+// and device size to ~/.krplot/url and one file per HTML widget in
+// ~/.krplot/viewer; this host polls them, serves the widgets and drives
+// the webviews.
 const vscode = require('vscode');
 const fs = require('fs');
+<<<<<<< HEAD
 const {
   DEFAULT_DEVICE, urlFile, readUrl, parseSession, vscodeRTakesPlots
 } = require('./session');
@@ -14,18 +17,182 @@ const LAYOUT_KEY = 'krplot.layout';
 const DEFAULT_LAYOUT = { mode: 'device', w: 16, h: 9 };
 const VSCODE_R = 'REditorSupport.r';
 const IGNORE_VSCODE_R_KEY = 'krplot.ignoreVscodeR';
+=======
+const http = require('http');
+const os = require('os');
+const path = require('path');
+
+const DIR = path.join(os.homedir(), '.krplot');
+const URL_FILE = path.join(DIR, 'url');
+const VIEWER_DIR = path.join(DIR, 'viewer');
+const ALIVE_FILE = path.join(DIR, 'alive');
+const INIT_FILE = path.join(DIR, 'init.R');
+const LAYOUT_KEY = 'krplot.layout';
+const DEFAULT_LAYOUT = { mode: 'device', w: 16, h: 9 };
+// httpgd defaults, used when R does not give the device size
+const DEFAULT_DEVICE = { w: 720, h: 576 };
+
+const MIME = {
+  '.html': 'text/html; charset=utf-8',
+  '.htm': 'text/html; charset=utf-8',
+  '.js': 'text/javascript; charset=utf-8',
+  '.mjs': 'text/javascript; charset=utf-8',
+  '.css': 'text/css; charset=utf-8',
+  '.json': 'application/json',
+  '.map': 'application/json',
+  '.svg': 'image/svg+xml',
+  '.png': 'image/png',
+  '.jpg': 'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.gif': 'image/gif',
+  '.webp': 'image/webp',
+  '.ico': 'image/x-icon',
+  '.woff': 'font/woff',
+  '.woff2': 'font/woff2',
+  '.ttf': 'font/ttf',
+  '.otf': 'font/otf',
+  '.eot': 'application/vnd.ms-fontobject',
+  '.wasm': 'application/wasm',
+  '.txt': 'text/plain; charset=utf-8',
+  '.csv': 'text/csv; charset=utf-8'
+};
+
+// Lines: httpgd URL, then device width and height (px)
+function readUrl() {
+  try {
+    return fs.readFileSync(URL_FILE, 'utf8').trim() || undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+function parseDevice(content) {
+  const [, w, h] = content.split(/\r?\n/).map(Number);
+  return w > 0 && h > 0 ? { w, h } : DEFAULT_DEVICE;
+}
+
+// httpgd session: local base URL (polled from here) and token
+function parseSession(content) {
+  try {
+    const u = new URL(content.split(/\r?\n/)[0].trim());
+    return {
+      url: u.toString(),
+      base: u.origin,
+      token: u.searchParams.get('token') || '',
+      device: parseDevice(content)
+    };
+  } catch {
+    return undefined;
+  }
+}
+>>>>>>> ea4ecfa (feat: show HTML widgets (leaflet, plotly, ...) in the pane)
+
+async function externalUrl(url) {
+  // Forwards the port when VS Code runs remotely (devcontainer, SSH)
+  const uri = await vscode.env.asExternalUri(vscode.Uri.parse(url));
+  return uri.toString(true);
+}
+
+// Name shown for an HTML page: widget class (leaflet, plotly, ...), else
+// its title
+function htmlName(file) {
+  let html = '';
+  try {
+    html = fs.readFileSync(file, 'utf8');
+  } catch {
+    return path.basename(file);
+  }
+  const widget = html.match(/class="([\w.-]+) html-widget/);
+  if (widget) return widget[1];
+  const title = html.match(/<title>([^<]*)<\/title>/i);
+  return title && title[1].trim() ? title[1].trim() : 'HTML';
+}
+
+// Serves the folders of the HTML pages written by R (index.html and its
+// lib/ dependencies) on 127.0.0.1, one URL prefix per page
+class FileServer {
+  constructor() {
+    this.dirs = new Map();
+    this.count = 0;
+    this.ready = undefined;
+    this.server = undefined;
+  }
+
+  base() {
+    if (!this.ready) {
+      this.ready = new Promise((resolve, reject) => {
+        this.server = http.createServer((req, res) => this.handle(req, res));
+        this.server.on('error', reject);
+        this.server.listen(0, '127.0.0.1', () => {
+          const port = this.server.address().port;
+          resolve(externalUrl(`http://127.0.0.1:${port}`)
+            .then(u => u.replace(/\/$/, '')));
+        });
+      });
+    }
+    return this.ready;
+  }
+
+  async add(file) {
+    const id = String(++this.count);
+    this.dirs.set(id, path.resolve(path.dirname(file)));
+    const name = encodeURIComponent(path.basename(file));
+    return `${await this.base()}/w/${id}/${name}`;
+  }
+
+  handle(req, res) {
+    const send = (code, body, type = 'text/plain; charset=utf-8') => {
+      res.writeHead(code, { 'Content-Type': type });
+      res.end(body);
+    };
+    let rel;
+    let dir;
+    try {
+      const u = new URL(req.url, 'http://127.0.0.1');
+      const m = u.pathname.match(/^\/w\/(\d+)\/(.*)$/);
+      dir = m && this.dirs.get(m[1]);
+      rel = m && decodeURIComponent(m[2]);
+    } catch {
+      return send(400, 'Bad request');
+    }
+    if (!dir) return send(404, 'Not found');
+    let file = path.resolve(dir, rel || 'index.html');
+    // Only files of the page folder
+    if (file !== dir && !file.startsWith(dir + path.sep)) {
+      return send(403, 'Forbidden');
+    }
+    fs.stat(file, (err, st) => {
+      if (!err && st.isDirectory()) file = path.join(file, 'index.html');
+      fs.readFile(file, (e, data) => {
+        if (e) return send(404, 'Not found');
+        const type = MIME[path.extname(file).toLowerCase()] ||
+          'application/octet-stream';
+        send(200, data, type);
+      });
+    });
+  }
+
+  dispose() {
+    if (this.server) this.server.close();
+  }
+}
 
 class Plots {
   constructor(context) {
     this.context = context;
     this.webviews = new Set();
-    this.url = undefined;
+    this.content = undefined;
     this.session = undefined;
     this.externalBase = undefined;
-    this.state = { connected: false, ids: [], upid: -1 };
+    this.connected = false;
+    this.upid = -1;
+    // History: plots and HTML pages, in the order they were shown
+    this.items = [];
+    this.htmlCount = 0;
     this.timer = undefined;
     this.view = undefined;
     this.window = undefined;
+    this.files = new FileServer();
   }
 
   get layout() {
@@ -40,14 +207,14 @@ class Plots {
   async connect(content) {
     this.content = content;
     this.session = content && parseSession(content);
-    this.state = { connected: false, ids: [], upid: -1 };
+    this.connected = false;
+    this.upid = -1;
     this.externalBase = undefined;
+    // Plot ids belong to the previous httpgd session
+    this.items = this.items.filter(i => i.kind !== 'plot');
     if (this.session) {
-      // Forwards the port when VS Code runs remotely (devcontainer, SSH)
-      const ext = await vscode.env.asExternalUri(
-        vscode.Uri.parse(this.session.base)
-      );
-      this.externalBase = ext.toString(true).replace(/\/$/, '');
+      this.externalBase = (await externalUrl(this.session.base))
+        .replace(/\/$/, '');
     }
     this.broadcast();
     this.schedule();
@@ -67,19 +234,89 @@ class Plots {
   async poll() {
     try {
       const st = await (await fetch(this.endpoint('/state'))).json();
-      if (st.upid === this.state.upid && this.state.connected) return;
+      if (st.upid === this.upid && this.connected) return;
       const pl = await (await fetch(this.endpoint('/plots'))).json();
-      this.state = {
-        connected: true,
-        ids: pl.plots.map(p => p.id),
-        upid: pl.state.upid
-      };
+      this.connected = true;
+      this.upid = pl.state.upid;
+      this.syncPlots(pl.plots.map(p => p.id));
       this.broadcast();
     } catch {
-      if (this.state.connected) {
-        this.state = { connected: false, ids: [], upid: -1 };
+      if (this.connected) {
+        this.connected = false;
+        this.items = this.items.filter(i => i.kind !== 'plot');
         this.broadcast();
       }
+    }
+  }
+
+  // Keep the history in line with httpgd: drop removed plots, append new
+  syncPlots(ids) {
+    const live = new Set(ids);
+    this.items = this.items.filter(i => i.kind !== 'plot' || live.has(i.id));
+    const known = new Set(
+      this.items.filter(i => i.kind === 'plot').map(i => i.id)
+    );
+    const base = this.session.base;
+    for (const id of ids) {
+      if (!known.has(id)) {
+        this.items.push({ kind: 'plot', id, key: `p:${base}:${id}` });
+      }
+    }
+  }
+
+  // HTML pages sent by R: one file per page, read then deleted
+  async pollViewer() {
+    let files;
+    try {
+      files = fs.readdirSync(VIEWER_DIR).filter(f => f.endsWith('.txt'));
+    } catch {
+      return;
+    }
+    let added = false;
+    for (const f of files.sort()) {
+      const p = path.join(VIEWER_DIR, f);
+      let url;
+      try {
+        url = fs.readFileSync(p, 'utf8').trim();
+        fs.unlinkSync(p);
+      } catch {
+        continue;
+      }
+      if (url) {
+        await this.addHtml(url);
+        added = true;
+      }
+    }
+    if (added) {
+      this.broadcast();
+      this.reveal();
+    }
+  }
+
+  async addHtml(url) {
+    let src;
+    let name;
+    if (/^https?:\/\//i.test(url)) {
+      // Web app (Shiny, ...) served by R
+      src = await externalUrl(url);
+      name = new URL(url).host;
+    } else {
+      src = await this.files.add(url);
+      name = htmlName(url);
+    }
+    const key = `h:${++this.htmlCount}`;
+    this.items.push({ kind: 'html', key, src, name });
+  }
+
+  reveal() {
+    const reveal = vscode.workspace
+      .getConfiguration('krplot')
+      .get('revealOnNewSession');
+    if (!reveal || this.window) return;
+    if (this.view) {
+      this.view.show(true);
+    } else {
+      vscode.commands.executeCommand('krplot.plots.focus');
     }
   }
 
@@ -87,11 +324,13 @@ class Plots {
     return {
       type: 'state',
       hasSession: Boolean(this.session),
+      connected: this.connected,
       base: this.externalBase,
       token: this.session ? this.session.token : '',
+      upid: this.upid,
       device: this.session ? this.session.device : DEFAULT_DEVICE,
       layout: this.layout,
-      ...this.state
+      items: this.items
     };
   }
 
@@ -118,6 +357,10 @@ class Plots {
     this.webviews.delete(webview);
   }
 
+  item(key) {
+    return this.items.find(i => i.key === key);
+  }
+
   async onMessage(webview, m) {
     switch (m.type) {
       case 'ready':
@@ -128,10 +371,12 @@ class Plots {
         this.broadcast();
         break;
       case 'remove':
-        await this.request('/remove', { id: m.id });
+        await this.remove(m.key);
         break;
       case 'clear':
+        this.items = this.items.filter(i => i.kind === 'plot');
         await this.request('/clear');
+        this.broadcast();
         break;
       case 'save':
         await this.save(webview, m);
@@ -139,12 +384,20 @@ class Plots {
       case 'savePng':
         await this.writePng(m);
         break;
-      case 'openWindow':
-        await this.openWindow();
+      case 'openItem':
+        await this.openItem(m.key);
         break;
-      case 'openBrowser':
-        await this.openBrowser();
-        break;
+    }
+  }
+
+  async remove(key) {
+    const it = this.item(key);
+    if (!it) return;
+    if (it.kind === 'plot') {
+      await this.request('/remove', { id: it.id });
+    } else {
+      this.items = this.items.filter(i => i !== it);
+      this.broadcast();
     }
   }
 
@@ -155,15 +408,16 @@ class Plots {
     } catch {
       // Session gone: the next poll reports it
     }
-    this.poll();
+    await this.poll();
   }
 
   async save(webview, m) {
-    if (!this.session) return;
+    const it = this.item(m.key);
+    if (!this.session || !it || it.kind !== 'plot') return;
     let svg;
     try {
       const res = await fetch(this.endpoint('/plot', {
-        id: m.id, width: m.width, height: m.height, renderer: 'svgp'
+        id: it.id, width: m.width, height: m.height, renderer: 'svgp'
       }));
       svg = await res.text();
     } catch (e) {
@@ -194,6 +448,15 @@ class Plots {
     });
   }
 
+  async openItem(key) {
+    const it = this.item(key);
+    if (it && it.kind === 'html') {
+      vscode.env.openExternal(vscode.Uri.parse(it.src, true));
+    } else {
+      await this.openBrowser();
+    }
+  }
+
   async openWindow() {
     if (this.window) {
       this.window.reveal();
@@ -222,10 +485,9 @@ class Plots {
 
   async openBrowser() {
     if (!this.session) return;
-    const uri = await vscode.env.asExternalUri(
-      vscode.Uri.parse(this.session.url)
+    vscode.env.openExternal(
+      vscode.Uri.parse(await externalUrl(this.session.url), true)
     );
-    vscode.env.openExternal(uri);
   }
 
   html(webview) {
@@ -236,7 +498,8 @@ class Plots {
       "default-src 'none'",
       `style-src ${webview.cspSource}`,
       `script-src ${webview.cspSource}`,
-      'img-src http: https: blob: data:'
+      'img-src http: https: blob: data:',
+      'frame-src http: https:'
     ].join('; ');
     return `<!DOCTYPE html>
 <html><head>
@@ -245,11 +508,11 @@ class Plots {
 <link rel="stylesheet" href="${media('view.css')}">
 </head><body>
 <div id="toolbar">
-  <button id="prev" title="Previous plot (Left)">&#9664;</button>
+  <button id="prev" title="Previous (Left)">&#9664;</button>
   <span id="count">0 / 0</span>
-  <button id="next" title="Next plot (Right)">&#9654;</button>
+  <button id="next" title="Next (Right)">&#9654;</button>
   <span class="sep"></span>
-  <select id="layout" title="Plot size">
+  <select id="layout" title="Size">
     <option value="device" id="device">Device</option>
     <option value="fill">Fill</option>
     <optgroup label="Keep ratio">
@@ -272,11 +535,16 @@ class Plots {
   <span class="sep"></span>
   <button id="svg" title="Save as SVG">SVG</button>
   <button id="png" title="Save as PNG">PNG</button>
-  <button id="remove" title="Remove this plot">&#128465;</button>
-  <button id="clear" title="Remove all plots">&#10005;</button>
+  <button id="open" title="Open in browser">&#8599;</button>
+  <button id="remove" title="Remove">&#128465;</button>
+  <button id="clear" title="Remove all">&#10005;</button>
   <span id="info"></span>
 </div>
-<div id="stage"><img id="plot" alt=""><p id="empty"></p></div>
+<div id="stage">
+  <img id="plot" alt="" hidden>
+  <div id="frames"></div>
+  <p id="empty"></p>
+</div>
 <script src="${media('view.js')}"></script>
 </body></html>`;
   }
@@ -299,6 +567,7 @@ class PlotsViewProvider {
   }
 }
 
+<<<<<<< HEAD
 // vscode-R would show the plots in its own viewer, in the editor area
 async function checkVscodeR(context) {
   if (!vscode.extensions.getExtension(VSCODE_R)) return;
@@ -323,10 +592,49 @@ async function checkVscodeR(context) {
     if (values.workspaceValue !== undefined) {
       await config.update('plot.backend', 'native', Workspace);
     }
+=======
+// Copies the R side to ~/.krplot/init.R when it changed
+function installInit(context) {
+  const src = path.join(context.extensionPath, 'r', 'init.R');
+  try {
+    const code = fs.readFileSync(src, 'utf8');
+    let current;
+    try {
+      current = fs.readFileSync(INIT_FILE, 'utf8');
+    } catch {
+      current = undefined;
+    }
+    if (current !== code) {
+      fs.mkdirSync(DIR, { recursive: true });
+      fs.writeFileSync(INIT_FILE, code);
+    }
+  } catch (e) {
+    vscode.window.showErrorMessage(
+      `krplot: cannot install ${INIT_FILE} (${e})`
+    );
+  }
+}
+
+// Tells R the extension runs, so that HTML pages are not sent to a view
+// nobody displays (R falls back to the browser)
+function heartbeat() {
+  try {
+    fs.mkdirSync(DIR, { recursive: true });
+    const now = new Date();
+    try {
+      fs.utimesSync(ALIVE_FILE, now, now);
+    } catch {
+      fs.writeFileSync(ALIVE_FILE, '');
+    }
+  } catch {
+    // Read-only home: HTML pages go to the browser
+>>>>>>> ea4ecfa (feat: show HTML widgets (leaflet, plotly, ...) in the pane)
   }
 }
 
 function activate(context) {
+  installInit(context);
+  heartbeat();
   const plots = new Plots(context);
   checkVscodeR(context);
   context.subscriptions.push(
@@ -346,25 +654,27 @@ function activate(context) {
   );
   plots.connect(readUrl());
   // Polling is portable (Linux, Windows, macOS) and works before the
-  // directory exists
+  // files exist
   fs.watchFile(URL_FILE, { interval: 500 }, () => {
     const content = readUrl();
     if (!content || content === plots.content) return;
     plots.connect(content);
-    const reveal = vscode.workspace
-      .getConfiguration('krplot')
-      .get('revealOnNewSession');
-    if (!reveal || plots.window) return;
-    if (plots.view) {
-      plots.view.show(true);
-    } else {
-      vscode.commands.executeCommand('krplot.plots.focus');
-    }
+    plots.reveal();
   });
+  let viewerBusy = false;
+  const viewerTimer = setInterval(() => {
+    if (viewerBusy) return;
+    viewerBusy = true;
+    plots.pollViewer().finally(() => { viewerBusy = false; });
+  }, 300);
+  const aliveTimer = setInterval(heartbeat, 3000);
   context.subscriptions.push({
     dispose: () => {
       fs.unwatchFile(URL_FILE);
       clearTimeout(plots.timer);
+      clearInterval(viewerTimer);
+      clearInterval(aliveTimer);
+      plots.files.dispose();
     }
   });
 }
