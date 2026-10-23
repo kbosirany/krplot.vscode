@@ -1,8 +1,8 @@
 {
-  "name": "rplot-panel",
-  "displayName": "R Plots panel",
+  "name": "krplot",
+  "displayName": "krplot: R Plots",
   "description": "Dedicated R plots view (httpgd) outside the editor area",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "publisher": "korlando",
   "license": "MIT",
   "engines": { "vscode": "^1.90.0" },
@@ -12,47 +12,63 @@
   "contributes": {
     "viewsContainers": {
       "panel": [
-        { "id": "rplotPanel", "title": "R Plots", "icon": "media/plot.svg" }
+        { "id": "krplot", "title": "R Plots", "icon": "media/plot.svg" }
       ]
     },
     "views": {
-      "rplotPanel": [
-        { "type": "webview", "id": "rplotPanel.plots", "name": "R Plots" }
+      "krplot": [
+        { "type": "webview", "id": "krplot.plots", "name": "R Plots" }
       ]
     },
     "commands": [
       {
-        "command": "rplotPanel.reload",
-        "title": "Reload R Plots",
-        "icon": "$(refresh)"
+        "command": "krplot.openWindow",
+        "title": "R Plots: Open in Separate Window",
+        "icon": "$(multiple-windows)"
       },
       {
-        "command": "rplotPanel.openExternal",
-        "title": "Open R Plots in Browser",
+        "command": "krplot.openBrowser",
+        "title": "R Plots: Open in Browser",
         "icon": "$(link-external)"
+      },
+      {
+        "command": "krplot.reload",
+        "title": "R Plots: Reload",
+        "icon": "$(refresh)"
       }
     ],
     "menus": {
       "view/title": [
         {
-          "command": "rplotPanel.reload",
-          "when": "view == rplotPanel.plots",
-          "group": "navigation"
+          "command": "krplot.openWindow",
+          "when": "view == krplot.plots",
+          "group": "navigation@1"
         },
         {
-          "command": "rplotPanel.openExternal",
-          "when": "view == rplotPanel.plots",
-          "group": "navigation"
+          "command": "krplot.openBrowser",
+          "when": "view == krplot.plots",
+          "group": "navigation@2"
+        },
+        {
+          "command": "krplot.reload",
+          "when": "view == krplot.plots",
+          "group": "navigation@3"
         }
       ]
     },
     "configuration": {
-      "title": "R Plots panel",
+      "title": "krplot",
       "properties": {
-        "rplotPanel.revealOnNewSession": {
+        "krplot.revealOnNewSession": {
           "type": "boolean",
           "default": true,
           "description": "Reveal the R Plots view when an R session opens its first plot."
+        },
+        "krplot.pollInterval": {
+          "type": "number",
+          "default": 400,
+          "minimum": 100,
+          "description": "Interval (ms) between checks of the R session for new plots."
         }
       }
     }
