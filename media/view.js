@@ -12,8 +12,11 @@
   const inW = $('w');
   const inH = $('h');
 
-  let state = { hasSession: false, connected: false, ids: [], upid: -1 };
-  let layout = { mode: 'fill', w: 16, h: 9 };
+  let state = {
+    hasSession: false, connected: false, ids: [], upid: -1,
+    device: { w: 720, h: 576 }
+  };
+  let layout = { mode: 'device', w: 16, h: 9 };
   let index = -1;
   let seq = 0;
 
@@ -26,6 +29,8 @@
   }
 
   function showLayout() {
+    const d = state.device;
+    $('device').textContent = `Device ratio (${d.w} \u00d7 ${d.h})`;
     layoutSel.value = selectValue();
     const custom = ['ratio:custom', 'fixed'].includes(layoutSel.value);
     dims.hidden = !custom;
@@ -45,8 +50,8 @@
 
   layoutSel.addEventListener('change', () => {
     const v = layoutSel.value;
-    if (v === 'fill') {
-      setLayout({ ...layout, mode: 'fill' });
+    if (v === 'fill' || v === 'device') {
+      setLayout({ ...layout, mode: v });
     } else if (v === 'fixed') {
       const fixed = layout.mode === 'fixed';
       setLayout({
@@ -75,8 +80,9 @@
     const cw = Math.max(1, stage.clientWidth);
     const ch = Math.max(1, stage.clientHeight);
     let rw = cw, rh = ch, dw = cw, dh = ch;
-    if (layout.mode === 'ratio') {
-      const r = layout.w / layout.h;
+    if (layout.mode === 'ratio' || layout.mode === 'device') {
+      const d = layout.mode === 'device' ? state.device : layout;
+      const r = d.w / d.h;
       dw = rw = Math.min(cw, ch * r);
       dh = rh = dw / r;
     } else if (layout.mode === 'fixed') {

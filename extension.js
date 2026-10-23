@@ -1,7 +1,8 @@
 // krplot: shows the plots of the current R session (httpgd device) in a
 // dedicated view (bottom panel or secondary sidebar) or in a separate
-// window, never in the editor area. The R side writes the httpgd URL to
-// ~/.krplot/url; this host polls httpgd and drives the webviews.
+// window, never in the editor area. The R side writes the httpgd URL and
+// device size to ~/.krplot/url; this host polls httpgd and drives the
+// webviews.
 const vscode = require('vscode');
 const fs = require('fs');
 const os = require('os');
@@ -9,8 +10,11 @@ const path = require('path');
 
 const URL_FILE = path.join(os.homedir(), '.krplot', 'url');
 const LAYOUT_KEY = 'krplot.layout';
-const DEFAULT_LAYOUT = { mode: 'fill', w: 16, h: 9 };
+const DEFAULT_LAYOUT = { mode: 'device', w: 16, h: 9 };
+// httpgd defaults, used when R does not give the device size
+const DEFAULT_DEVICE = { w: 720, h: 576 };
 
+// Lines: httpgd URL, then device width and height (px)
 function readUrl() {
   try {
     return fs.readFileSync(URL_FILE, 'utf8').trim() || undefined;
@@ -19,11 +23,21 @@ function readUrl() {
   }
 }
 
+function parseDevice(content) {
+  const [, w, h] = content.split(/\r?\n/).map(Number);
+  return w > 0 && h > 0 ? { w, h } : DEFAULT_DEVICE;
+}
+
 // httpgd session: local base URL (polled from here) and token
-function parseSession(url) {
+function parseSession(content) {
   try {
-    const u = new URL(url);
-    return { base: u.origin, token: u.searchParams.get('token') || '' };
+    const u = new URL(content.split(/\r?\n/)[0].trim());
+    return {
+      url: u.toString(),
+      base: u.origin,
+      token: u.searchParams.get('token') || '',
+      device: parseDevice(content)
+    };
   } catch {
     return undefined;
   }
@@ -51,9 +65,9 @@ class Plots {
     return `${this.session.base}${p}?${q}`;
   }
 
-  async connect(url) {
-    this.url = url;
-    this.session = url && parseSession(url);
+  async connect(content) {
+    this.content = content;
+    this.session = content && parseSession(content);
     this.state = { connected: false, ids: [], upid: -1 };
     this.externalBase = undefined;
     if (this.session) {
@@ -103,6 +117,7 @@ class Plots {
       hasSession: Boolean(this.session),
       base: this.externalBase,
       token: this.session ? this.session.token : '',
+      device: this.session ? this.session.device : DEFAULT_DEVICE,
       layout: this.layout,
       ...this.state
     };
@@ -234,8 +249,10 @@ class Plots {
   }
 
   async openBrowser() {
-    if (!this.url) return;
-    const uri = await vscode.env.asExternalUri(vscode.Uri.parse(this.url));
+    if (!this.session) return;
+    const uri = await vscode.env.asExternalUri(
+      vscode.Uri.parse(this.session.url)
+    );
     vscode.env.openExternal(uri);
   }
 
@@ -261,6 +278,7 @@ class Plots {
   <button id="next" title="Next plot (Right)">&#9654;</button>
   <span class="sep"></span>
   <select id="layout" title="Plot size">
+    <option value="device" id="device">Device</option>
     <option value="fill">Fill</option>
     <optgroup label="Keep ratio">
       <option value="ratio:16:9">16:9</option>
@@ -330,9 +348,9 @@ function activate(context) {
   // Polling is portable (Linux, Windows, macOS) and works before the
   // directory exists
   fs.watchFile(URL_FILE, { interval: 500 }, () => {
-    const url = readUrl();
-    if (!url || url === plots.url) return;
-    plots.connect(url);
+    const content = readUrl();
+    if (!content || content === plots.content) return;
+    plots.connect(content);
     const reveal = vscode.workspace
       .getConfiguration('krplot')
       .get('revealOnNewSession');

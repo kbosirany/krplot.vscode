@@ -2,7 +2,7 @@
   "name": "krplot",
   "displayName": "krplot: R Plots",
   "description": "Dedicated R plots view (httpgd) outside the editor area",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "publisher": "korlando",
   "license": "MIT",
   "engines": { "vscode": "^1.90.0" },

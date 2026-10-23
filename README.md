@@ -12,6 +12,9 @@ to keep it on the side. VS Code remembers the position.
 - Plot history: previous/next buttons or Left/Right keys; new plots are
   shown as they are drawn.
 - Plot size, shared by all views and remembered:
+  - **Device ratio** (default): keeps the ratio of the R device
+    (`httpgd.width` x `httpgd.height` options, 720 x 576 px by default),
+    fitted to the view;
   - **Fill**: the plot takes the whole view;
   - **Keep ratio**: 16:9, 4:3, 3:2, 1:1, 3:4, A4 portrait/landscape or a
     custom ratio, fitted to the view;
@@ -32,7 +35,8 @@ to keep it on the side. VS Code remembers the position.
    "r.plot.backend": "native"
    ```
 
-2. In `~/.Rprofile`, use httpgd as the device and publish its URL:
+2. In `~/.Rprofile`, use httpgd as the device and publish its URL
+   and size:
 
    ```r
    if (
@@ -48,7 +52,15 @@ to keep it on the side. VS Code remembers the position.
        )
        dir <- file.path(home, ".krplot")
        dir.create(dir, showWarnings = FALSE)
-       writeLines(httpgd::hgd_url(), file.path(dir, "url"))
+       # URL, then device size: the view keeps this ratio by default
+       writeLines(
+         c(
+           httpgd::hgd_url(),
+           getOption("httpgd.width", 720),
+           getOption("httpgd.height", 576)
+         ),
+         file.path(dir, "url")
+       )
      })
    }
    ```
@@ -57,7 +69,7 @@ to keep it on the side. VS Code remembers the position.
 
    ```sh
    npx @vscode/vsce package --allow-missing-repository
-   code --install-extension krplot-0.2.0.vsix
+   code --install-extension krplot-0.3.0.vsix
    ```
 
 The last R session that opened a plot device is the one displayed.
