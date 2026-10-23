@@ -36,6 +36,35 @@ of the R graphics device.
   (the httpgd port is forwarded automatically).
 - **Cross-platform**: Linux, Windows and macOS.
 
+## Installation
+
+Install **krplot** from the Extensions view of VS Code, or build it from
+source.
+
+### From source
+
+You need [Node.js](https://nodejs.org/) (18 or later) and Git. There is no
+dependency to install and nothing to compile:
+
+```sh
+git clone https://github.com/kbosirany/krplot.vscode.git
+cd krplot.vscode
+npx @vscode/vsce package
+```
+
+This creates `krplot-<version>.vsix` in the folder. Install it with:
+
+```sh
+code --install-extension krplot-<version>.vsix
+```
+
+or from VS Code: *Extensions* view > *...* menu > *Install from VSIX...*.
+Then reload the window.
+
+The `.vsix` of each commit on `main` is also built by the CI: download the
+`krplot-vsix` artifact from the run in the *Actions* tab of the
+repository.
+
 ## Requirements
 
 - [R](https://www.r-project.org/) with the
