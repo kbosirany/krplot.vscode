@@ -18,6 +18,12 @@ project uses [Semantic Versioning](https://semver.org/).
 - Tests: unit tests of the R/extension contract, and an end-to-end test
   running the README `.Rprofile` block in R with httpgd.
 - CI runs the tests on Linux, Windows and macOS.
+- CI creates the GitHub release, with the `.vsix`, when a `v*` tag is
+  pushed.
+
+### Changed
+
+- CI actions updated to their Node.js 24 versions.
 
 ## [0.4.0] - 2026-10-23
 
@@ -59,6 +65,7 @@ First public release on the Visual Studio Marketplace.
 - R Plots view in the bottom panel showing the httpgd web client of the
   current R session.
 
+[0.4.1]: https://github.com/kbosirany/krplot.vscode/releases/tag/v0.4.1
 [0.4.0]: https://github.com/kbosirany/krplot.vscode/releases/tag/v0.4.0
 [0.3.0]: https://github.com/kbosirany/krplot.vscode/releases/tag/v0.3.0
 [0.2.0]: https://github.com/kbosirany/krplot.vscode/releases/tag/v0.2.0

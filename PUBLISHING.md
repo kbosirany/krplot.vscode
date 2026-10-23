@@ -50,8 +50,9 @@ Marketplace (and optionally Open VSX).
    > Visual Studio Code*). The extension appears on the Marketplace after
    a few minutes of verification.
 
-5. Optionally, create a GitHub release from the tag with the `.vsix`
-   attached (also built by the CI as an artifact).
+5. The CI creates the GitHub release of the tag, with the `.vsix` and
+   the `CHANGELOG.md` entry of the version. It fails if the tag does not
+   match the `package.json` version.
 
 ## Open VSX (VSCodium, Positron, Cursor...)
 
