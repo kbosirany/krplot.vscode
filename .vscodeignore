@@ -8,3 +8,4 @@ PUBLISHING.md
 node_modules/**
 *.vsix
 .gitignore
+test/**

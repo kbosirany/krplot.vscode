@@ -5,43 +5,15 @@
 // webviews.
 const vscode = require('vscode');
 const fs = require('fs');
-const os = require('os');
-const path = require('path');
+const {
+  DEFAULT_DEVICE, urlFile, readUrl, parseSession, vscodeRTakesPlots
+} = require('./session');
 
-const URL_FILE = path.join(os.homedir(), '.krplot', 'url');
+const URL_FILE = urlFile();
 const LAYOUT_KEY = 'krplot.layout';
 const DEFAULT_LAYOUT = { mode: 'device', w: 16, h: 9 };
-// httpgd defaults, used when R does not give the device size
-const DEFAULT_DEVICE = { w: 720, h: 576 };
-
-// Lines: httpgd URL, then device width and height (px)
-function readUrl() {
-  try {
-    return fs.readFileSync(URL_FILE, 'utf8').trim() || undefined;
-  } catch {
-    return undefined;
-  }
-}
-
-function parseDevice(content) {
-  const [, w, h] = content.split(/\r?\n/).map(Number);
-  return w > 0 && h > 0 ? { w, h } : DEFAULT_DEVICE;
-}
-
-// httpgd session: local base URL (polled from here) and token
-function parseSession(content) {
-  try {
-    const u = new URL(content.split(/\r?\n/)[0].trim());
-    return {
-      url: u.toString(),
-      base: u.origin,
-      token: u.searchParams.get('token') || '',
-      device: parseDevice(content)
-    };
-  } catch {
-    return undefined;
-  }
-}
+const VSCODE_R = 'REditorSupport.r';
+const IGNORE_VSCODE_R_KEY = 'krplot.ignoreVscodeR';
 
 class Plots {
   constructor(context) {
@@ -327,8 +299,36 @@ class PlotsViewProvider {
   }
 }
 
+// vscode-R would show the plots in its own viewer, in the editor area
+async function checkVscodeR(context) {
+  if (!vscode.extensions.getExtension(VSCODE_R)) return;
+  if (context.globalState.get(IGNORE_VSCODE_R_KEY)) return;
+  const config = vscode.workspace.getConfiguration('r');
+  if (!vscodeRTakesPlots((key, def) => config.get(key, def))) return;
+  const fix = 'Set r.plot.backend to native';
+  const ignore = "Don't ask again";
+  const choice = await vscode.window.showWarningMessage(
+    'krplot: the R extension (vscode-R) shows the plots in its own viewer. ' +
+      'Set "r.plot.backend" to "native" to show them in the R Plots ' +
+      'pane, then open a new R terminal.',
+    fix, ignore
+  );
+  if (choice === ignore) {
+    await context.globalState.update(IGNORE_VSCODE_R_KEY, true);
+  } else if (choice === fix) {
+    const { Global, Workspace } = vscode.ConfigurationTarget;
+    const values = config.inspect('plot.backend') || {};
+    await config.update('plot.backend', 'native', Global);
+    // A workspace value would override the user one
+    if (values.workspaceValue !== undefined) {
+      await config.update('plot.backend', 'native', Workspace);
+    }
+  }
+}
+
 function activate(context) {
   const plots = new Plots(context);
+  checkVscodeR(context);
   context.subscriptions.push(
     vscode.window.registerWebviewViewProvider(
       'krplot.plots', new PlotsViewProvider(plots),
