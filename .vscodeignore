@@ -1,0 +1,10 @@
+.git/**
+.github/**
+.vscode/**
+images/icon.svg
+images/screenshot.png
+CONTRIBUTING.md
+PUBLISHING.md
+node_modules/**
+*.vsix
+.gitignore

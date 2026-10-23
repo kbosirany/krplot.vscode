@@ -1,39 +1,87 @@
 {
   "name": "krplot",
-  "displayName": "krplot: R Plots",
-  "description": "Dedicated R plots view (httpgd) outside the editor area",
-  "version": "0.3.0",
-  "publisher": "korlando",
+  "displayName": "krplot: R Plots pane",
+  "description": "An RStudio/Positron-like Plots pane for R in VS Code, powered by httpgd: plot history, aspect ratio control, SVG/PNG export, separate window.",
+  "version": "0.4.0",
+  "publisher": "kbosirany",
+  "author": {
+    "name": "Kevin Bosirany Orlando"
+  },
   "license": "MIT",
-  "engines": { "vscode": "^1.90.0" },
-  "extensionKind": ["workspace"],
+  "icon": "images/icon.png",
+  "galleryBanner": {
+    "color": "#1b4a80",
+    "theme": "dark"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/kbosirany/krplot.vscode.git"
+  },
+  "bugs": {
+    "url": "https://github.com/kbosirany/krplot.vscode/issues"
+  },
+  "homepage": "https://github.com/kbosirany/krplot.vscode#readme",
+  "categories": [
+    "Data Science",
+    "Visualization",
+    "Other"
+  ],
+  "keywords": [
+    "R",
+    "plot",
+    "plots",
+    "httpgd",
+    "graphics",
+    "RStudio",
+    "Positron",
+    "ggplot2"
+  ],
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "extensionKind": [
+    "workspace"
+  ],
   "main": "./extension.js",
-  "activationEvents": ["onStartupFinished"],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
   "contributes": {
     "viewsContainers": {
       "panel": [
-        { "id": "krplot", "title": "R Plots", "icon": "media/plot.svg" }
+        {
+          "id": "krplot",
+          "title": "R Plots",
+          "icon": "media/plot.svg"
+        }
       ]
     },
     "views": {
       "krplot": [
-        { "type": "webview", "id": "krplot.plots", "name": "R Plots" }
+        {
+          "type": "webview",
+          "id": "krplot.plots",
+          "name": "R Plots"
+        }
       ]
     },
     "commands": [
       {
         "command": "krplot.openWindow",
-        "title": "R Plots: Open in Separate Window",
+        "title": "Open in Separate Window",
+        "category": "R Plots",
         "icon": "$(multiple-windows)"
       },
       {
         "command": "krplot.openBrowser",
-        "title": "R Plots: Open in Browser",
+        "title": "Open in Browser",
+        "category": "R Plots",
         "icon": "$(link-external)"
       },
       {
         "command": "krplot.reload",
-        "title": "R Plots: Reload",
+        "title": "Reload",
+        "category": "R Plots",
         "icon": "$(refresh)"
       }
     ],
