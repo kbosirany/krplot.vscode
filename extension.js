@@ -7,30 +7,22 @@
 // the webviews.
 const vscode = require('vscode');
 const fs = require('fs');
-<<<<<<< HEAD
+const http = require('http');
+const os = require('os');
+const path = require('path');
 const {
   DEFAULT_DEVICE, urlFile, readUrl, parseSession, vscodeRTakesPlots
 } = require('./session');
 
 const URL_FILE = urlFile();
-const LAYOUT_KEY = 'krplot.layout';
-const DEFAULT_LAYOUT = { mode: 'device', w: 16, h: 9 };
-const VSCODE_R = 'REditorSupport.r';
-const IGNORE_VSCODE_R_KEY = 'krplot.ignoreVscodeR';
-=======
-const http = require('http');
-const os = require('os');
-const path = require('path');
-
-const DIR = path.join(os.homedir(), '.krplot');
-const URL_FILE = path.join(DIR, 'url');
+const DIR = path.dirname(URL_FILE);
 const VIEWER_DIR = path.join(DIR, 'viewer');
 const ALIVE_FILE = path.join(DIR, 'alive');
 const INIT_FILE = path.join(DIR, 'init.R');
 const LAYOUT_KEY = 'krplot.layout';
 const DEFAULT_LAYOUT = { mode: 'device', w: 16, h: 9 };
-// httpgd defaults, used when R does not give the device size
-const DEFAULT_DEVICE = { w: 720, h: 576 };
+const VSCODE_R = 'REditorSupport.r';
+const IGNORE_VSCODE_R_KEY = 'krplot.ignoreVscodeR';
 
 const MIME = {
   '.html': 'text/html; charset=utf-8',
@@ -56,36 +48,6 @@ const MIME = {
   '.txt': 'text/plain; charset=utf-8',
   '.csv': 'text/csv; charset=utf-8'
 };
-
-// Lines: httpgd URL, then device width and height (px)
-function readUrl() {
-  try {
-    return fs.readFileSync(URL_FILE, 'utf8').trim() || undefined;
-  } catch {
-    return undefined;
-  }
-}
-
-function parseDevice(content) {
-  const [, w, h] = content.split(/\r?\n/).map(Number);
-  return w > 0 && h > 0 ? { w, h } : DEFAULT_DEVICE;
-}
-
-// httpgd session: local base URL (polled from here) and token
-function parseSession(content) {
-  try {
-    const u = new URL(content.split(/\r?\n/)[0].trim());
-    return {
-      url: u.toString(),
-      base: u.origin,
-      token: u.searchParams.get('token') || '',
-      device: parseDevice(content)
-    };
-  } catch {
-    return undefined;
-  }
-}
->>>>>>> ea4ecfa (feat: show HTML widgets (leaflet, plotly, ...) in the pane)
 
 async function externalUrl(url) {
   // Forwards the port when VS Code runs remotely (devcontainer, SSH)
@@ -567,7 +529,6 @@ class PlotsViewProvider {
   }
 }
 
-<<<<<<< HEAD
 // vscode-R would show the plots in its own viewer, in the editor area
 async function checkVscodeR(context) {
   if (!vscode.extensions.getExtension(VSCODE_R)) return;
@@ -592,7 +553,9 @@ async function checkVscodeR(context) {
     if (values.workspaceValue !== undefined) {
       await config.update('plot.backend', 'native', Workspace);
     }
-=======
+  }
+}
+
 // Copies the R side to ~/.krplot/init.R when it changed
 function installInit(context) {
   const src = path.join(context.extensionPath, 'r', 'init.R');
@@ -628,7 +591,6 @@ function heartbeat() {
     }
   } catch {
     // Read-only home: HTML pages go to the browser
->>>>>>> ea4ecfa (feat: show HTML widgets (leaflet, plotly, ...) in the pane)
   }
 }
 

@@ -1,6 +1,7 @@
-// End to end: the .Rprofile block of the README, run in an interactive R
-// session, must start httpgd and write ~/.krplot/url as session.js reads
-// it. Skipped when R or httpgd is missing, unless KRPLOT_REQUIRE_R is set.
+// End to end: the .Rprofile block of the README and r/init.R, run in an
+// interactive R session, must start httpgd and write ~/.krplot/url as
+// session.js reads it. Skipped when R or httpgd is missing, unless
+// KRPLOT_REQUIRE_R is set.
 const test = require('node:test');
 const assert = require('node:assert');
 const { spawn, spawnSync } = require('child_process');
@@ -19,7 +20,7 @@ function rprofileBlock() {
   const readme = fs.readFileSync(
     path.join(__dirname, '..', 'README.md'), 'utf8'
   );
-  const setup = readme.slice(readme.indexOf('### 1. Send R plots'));
+  const setup = readme.slice(readme.indexOf('### 1. Load krplot in R'));
   return setup.match(/```r\r?\n([\s\S]*?)```/)[1];
 }
 
@@ -45,6 +46,12 @@ function sandbox(termProgram) {
   const home = fs.mkdtempSync(path.join(os.tmpdir(), 'krplot-home-'));
   const profile = path.join(home, 'Rprofile');
   fs.writeFileSync(profile, rprofileBlock());
+  // What the extension does when it starts
+  fs.mkdirSync(path.join(home, '.krplot'));
+  fs.copyFileSync(
+    path.join(__dirname, '..', 'r', 'init.R'),
+    path.join(home, '.krplot', 'init.R')
+  );
   const env = {
     ...process.env,
     HOME: home,

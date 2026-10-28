@@ -129,17 +129,12 @@ VS Code `settings.json`:
 "r.plot.backend": "native"
 ```
 
-<<<<<<< HEAD
-krplot shows a notification to set it for you when vscode-R is installed
-and this setting is missing.
-
-### 3. Draw a plot
-=======
 krplot takes over the R viewer from vscode-R automatically, so HTML
-widgets go to the pane too.
+widgets go to the pane too. It also shows a notification to set
+`r.plot.backend` for you when vscode-R is installed and this setting is
+missing.
 
 ### 3. Draw something
->>>>>>> ea4ecfa (feat: show HTML widgets (leaflet, plotly, ...) in the pane)
 
 Open a **new** R terminal (the `.Rprofile` is read at startup) and run:
 
@@ -223,17 +218,12 @@ may load map tiles or fonts from the internet themselves).
 - **"Nothing to show yet"**: the R session was started before the
   `.Rprofile` block was added, or httpgd is not installed. Open a new R
   terminal and check `getOption("device")` returns a function.
-<<<<<<< HEAD
-- **Plots still open in an editor tab**: set `"r.plot.backend": "native"`
+- **Plots or widgets still open in an editor tab**: set `"r.plot.backend": "native"`
   (vscode-R), then open a new R terminal. Check that no workspace
   setting overrides it.
 - **Plots open in an X11 or Quartz window**: check the `.Rprofile` ends
   with a newline after the last `}`; some R consoles (arf) drop a last
   line without one.
-=======
-- **Plots or widgets still open in an editor tab**: set
-  `"r.plot.backend": "native"` (vscode-R), then open a new R terminal.
->>>>>>> ea4ecfa (feat: show HTML widgets (leaflet, plotly, ...) in the pane)
 - **"R session not reachable"**: the R session displayed was closed. Draw
   a plot in another session, or run `R Plots: Reload`.
 - **Several R sessions**: the pane shows the plots of the last session

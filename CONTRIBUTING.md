@@ -7,16 +7,11 @@ on [GitHub](https://github.com/kbosirany/krplot.vscode/issues).
 
 | Path | Content |
 |------|---------|
-<<<<<<< HEAD
-| `extension.js` | Extension host: watches `~/.krplot/url`, polls httpgd, saves files, opens the separate window |
-| `session.js` | Contract with the R side (`~/.krplot/url`) and vscode-R check, without the VS Code API |
-| `test/` | Unit tests and end-to-end test of the README `.Rprofile` block |
-| `media/view.js` | Webview: toolbar, layouts, plot rendering, PNG rasterization |
-=======
 | `extension.js` | Extension host: installs `~/.krplot/init.R`, polls httpgd and `~/.krplot/viewer`, serves HTML widgets, saves files, opens the separate window |
+| `session.js` | Contract with the R side (`~/.krplot/url`) and vscode-R check, without the VS Code API |
 | `r/init.R` | R side: httpgd device and R viewer, sourced from `~/.Rprofile` |
 | `media/view.js` | Webview: toolbar, layouts, plots and widget iframes, PNG rasterization |
->>>>>>> ea4ecfa (feat: show HTML widgets (leaflet, plotly, ...) in the pane)
+| `test/` | Unit tests and end-to-end test of the README `.Rprofile` block |
 | `media/view.css` | Webview styles (VS Code theme variables) |
 | `media/plot.svg` | Icon of the panel view |
 | `images/` | Marketplace icon and README screenshot |

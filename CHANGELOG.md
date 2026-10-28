@@ -4,7 +4,23 @@ All notable changes to krplot are documented in this file. The format
 follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the
 project uses [Semantic Versioning](https://semver.org/).
 
-<<<<<<< HEAD
+## [0.5.0] - 2026-10-23
+
+### Added
+
+- **HTML widgets** (leaflet, plotly, DT, ...) and pages sent to the R
+  viewer are shown in the pane, in the same history as plots. Widgets stay
+  interactive and keep their state when browsing the history; they follow
+  the size menu. Open the current item in the browser with the ↗ button.
+- The R side is now shipped with the extension and installed in
+  `~/.krplot/init.R`; `~/.Rprofile` only loads it. It takes over the R
+  viewer from vscode-R, and falls back to the browser when the extension
+  is not running.
+
+### Changed
+
+- New `.Rprofile` block (see the README): replace the previous one.
+
 ## [0.4.1] - 2026-10-23
 
 ### Fixed
@@ -25,24 +41,6 @@ project uses [Semantic Versioning](https://semver.org/).
 ### Changed
 
 - CI actions updated to their Node.js 24 versions.
-=======
-## [0.5.0] - 2026-10-23
-
-### Added
-
-- **HTML widgets** (leaflet, plotly, DT, ...) and pages sent to the R
-  viewer are shown in the pane, in the same history as plots. Widgets stay
-  interactive and keep their state when browsing the history; they follow
-  the size menu. Open the current item in the browser with the ↗ button.
-- The R side is now shipped with the extension and installed in
-  `~/.krplot/init.R`; `~/.Rprofile` only loads it. It takes over the R
-  viewer from vscode-R, and falls back to the browser when the extension
-  is not running.
-
-### Changed
-
-- New `.Rprofile` block (see the README): replace the previous one.
->>>>>>> ea4ecfa (feat: show HTML widgets (leaflet, plotly, ...) in the pane)
 
 ## [0.4.0] - 2026-10-23
 
@@ -84,11 +82,8 @@ First public release on the Visual Studio Marketplace.
 - R Plots view in the bottom panel showing the httpgd web client of the
   current R session.
 
-<<<<<<< HEAD
-[0.4.1]: https://github.com/kbosirany/krplot.vscode/releases/tag/v0.4.1
-=======
 [0.5.0]: https://github.com/kbosirany/krplot.vscode/releases/tag/v0.5.0
->>>>>>> ea4ecfa (feat: show HTML widgets (leaflet, plotly, ...) in the pane)
+[0.4.1]: https://github.com/kbosirany/krplot.vscode/releases/tag/v0.4.1
 [0.4.0]: https://github.com/kbosirany/krplot.vscode/releases/tag/v0.4.0
 [0.3.0]: https://github.com/kbosirany/krplot.vscode/releases/tag/v0.3.0
 [0.2.0]: https://github.com/kbosirany/krplot.vscode/releases/tag/v0.2.0
