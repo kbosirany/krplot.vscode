@@ -218,6 +218,11 @@ may load map tiles or fonts from the internet themselves).
 - **"Nothing to show yet"**: the R session was started before the
   `.Rprofile` block was added, or httpgd is not installed. Open a new R
   terminal and check `getOption("device")` returns a function.
+- **Widgets open in an editor tab after an update to 0.5.0**: your
+  `.Rprofile` still has the block of a previous version, which does not
+  load `~/.krplot/init.R`. krplot warns about it at startup: replace it
+  with the block of the [Setup](#1-load-krplot-in-r), then open a new R
+  terminal.
 - **Plots or widgets still open in an editor tab**: set `"r.plot.backend": "native"`
   (vscode-R), then open a new R terminal. Check that no workspace
   setting overrides it.

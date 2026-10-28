@@ -11,7 +11,8 @@ const http = require('http');
 const os = require('os');
 const path = require('path');
 const {
-  DEFAULT_DEVICE, urlFile, readUrl, parseSession, vscodeRTakesPlots
+  DEFAULT_DEVICE, urlFile, readUrl, parseSession, vscodeRTakesPlots,
+  rprofileFiles, findLegacyRprofile
 } = require('./session');
 
 const URL_FILE = urlFile();
@@ -23,6 +24,7 @@ const LAYOUT_KEY = 'krplot.layout';
 const DEFAULT_LAYOUT = { mode: 'device', w: 16, h: 9 };
 const VSCODE_R = 'REditorSupport.r';
 const IGNORE_VSCODE_R_KEY = 'krplot.ignoreVscodeR';
+const IGNORE_LEGACY_RPROFILE_KEY = 'krplot.ignoreLegacyRprofile';
 
 const MIME = {
   '.html': 'text/html; charset=utf-8',
@@ -556,6 +558,38 @@ async function checkVscodeR(context) {
   }
 }
 
+// The .Rprofile block of krplot < 0.5.0 does not load ~/.krplot/init.R:
+// widgets would open in the vscode-R viewer, in the editor area
+async function checkLegacyRprofile(context) {
+  if (context.globalState.get(IGNORE_LEGACY_RPROFILE_KEY)) return;
+  const folders = (vscode.workspace.workspaceFolders || [])
+    .filter(f => f.uri.scheme === 'file')
+    .map(f => f.uri.fsPath);
+  const file = findLegacyRprofile(rprofileFiles({ folders }));
+  if (!file) return;
+  const open = 'Open .Rprofile and copy the new block';
+  const ignore = "Don't ask again";
+  const choice = await vscode.window.showWarningMessage(
+    `krplot: ${file} has the krplot block of a previous version: HTML ` +
+      'widgets (leaflet, plotly, ...) open in an editor tab. Replace it ' +
+      'with the new block, then open a new R terminal.',
+    open, ignore
+  );
+  if (choice === ignore) {
+    await context.globalState.update(IGNORE_LEGACY_RPROFILE_KEY, true);
+  } else if (choice === open) {
+    const block = fs.readFileSync(
+      path.join(context.extensionPath, 'r', 'rprofile.R'), 'utf8'
+    );
+    await vscode.env.clipboard.writeText(block);
+    await vscode.window.showTextDocument(vscode.Uri.file(file));
+    vscode.window.showInformationMessage(
+      'krplot: the new block is in the clipboard. Paste it in place of ' +
+        'the previous krplot block, save, then open a new R terminal.'
+    );
+  }
+}
+
 // Copies the R side to ~/.krplot/init.R when it changed
 function installInit(context) {
   const src = path.join(context.extensionPath, 'r', 'init.R');
@@ -599,6 +633,7 @@ function activate(context) {
   heartbeat();
   const plots = new Plots(context);
   checkVscodeR(context);
+  checkLegacyRprofile(context);
   context.subscriptions.push(
     vscode.window.registerWebviewViewProvider(
       'krplot.plots', new PlotsViewProvider(plots),
