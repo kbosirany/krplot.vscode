@@ -1,13 +1,8 @@
 {
   "name": "krplot",
   "displayName": "krplot: R Plots pane",
-<<<<<<< HEAD
-  "description": "An RStudio/Positron-like Plots pane for R in VS Code, powered by httpgd: plot history, aspect ratio control, SVG/PNG export, separate window.",
-  "version": "0.4.1",
-=======
   "description": "An RStudio/Positron-like Plots pane for R in VS Code: plots (httpgd) and HTML widgets (leaflet, plotly, ...) with history, aspect ratio control, SVG/PNG export and separate window.",
   "version": "0.5.0",
->>>>>>> ea4ecfa (feat: show HTML widgets (leaflet, plotly, ...) in the pane)
   "publisher": "kbosirany",
   "author": {
     "name": "Kevin Bosirany Orlando"
