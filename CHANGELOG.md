@@ -4,6 +4,15 @@ All notable changes to krplot are documented in this file. The format
 follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the
 project uses [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Fixed
+
+- HTML widgets opened in an editor tab (vscode-R viewer) when the
+  `.Rprofile` still had the krplot block of a previous version, which does
+  not load `~/.krplot/init.R`. krplot now detects this block at startup and
+  offers to open the `.Rprofile` with the new block in the clipboard.
+
 ## [0.5.0] - 2026-10-28
 
 ### Added

@@ -48,7 +48,43 @@ function vscodeRTakesPlots(get) {
     get('plot.backend', 'auto') !== 'native';
 }
 
+// .Rprofile files R may read at startup: R_PROFILE_USER, else .Rprofile in
+// the working directory (a workspace folder), else in the R home (on
+// Windows, R_USER, HOME or Documents by default)
+function rprofileFiles({
+  env = process.env, home = os.homedir(), platform = process.platform,
+  folders = []
+} = {}) {
+  const homes = [home];
+  if (platform === 'win32') {
+    homes.unshift(env.R_USER, env.HOME, path.join(home, 'Documents'));
+  }
+  const files = [
+    env.R_PROFILE_USER,
+    ...folders.map(f => path.join(f, '.Rprofile')),
+    ...homes.filter(Boolean).map(h => path.join(h, '.Rprofile'))
+  ].filter(Boolean);
+  return [...new Set(files)];
+}
+
+// Block of krplot < 0.5.0: it starts httpgd itself and never loads
+// ~/.krplot/init.R, so HTML widgets go to the vscode-R viewer
+function isLegacyRprofile(content) {
+  return content.includes('.krplot') && !content.includes('init.R');
+}
+
+// First .Rprofile with the previous krplot block, if any
+function findLegacyRprofile(files) {
+  return files.find(f => {
+    try {
+      return isLegacyRprofile(fs.readFileSync(f, 'utf8'));
+    } catch {
+      return false;
+    }
+  });
+}
+
 module.exports = {
   DEFAULT_DEVICE, urlFile, readUrl, parseDevice, parseSession,
-  vscodeRTakesPlots
+  vscodeRTakesPlots, rprofileFiles, isLegacyRprofile, findLegacyRprofile
 };

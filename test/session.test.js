@@ -5,7 +5,7 @@ const os = require('os');
 const path = require('path');
 const {
   DEFAULT_DEVICE, urlFile, readUrl, parseDevice, parseSession,
-  vscodeRTakesPlots
+  vscodeRTakesPlots, rprofileFiles, isLegacyRprofile, findLegacyRprofile
 } = require('../session');
 
 const URL = 'http://127.0.0.1:41234/live?token=abc123';
@@ -72,4 +72,69 @@ test('vscode-R takes the plots unless its backend is native', () => {
   assert.strictEqual(
     vscodeRTakesPlots(settings({ sessionWatcher: false })), false
   );
+});
+
+// Block of krplot 0.4.x, before ~/.krplot/init.R
+const LEGACY_BLOCK = `# krplot: show R plots in the VS Code R Plots pane
+if (interactive() && requireNamespace("httpgd", quietly = TRUE)) {
+  options(device = function(...) {
+    httpgd::hgd(silent = TRUE)
+    dir <- file.path(Sys.getenv("HOME"), ".krplot")
+    writeLines(httpgd::hgd_url(), file.path(dir, "url"))
+  })
+}
+`;
+const BLOCK = fs.readFileSync(
+  path.join(__dirname, '..', 'r', 'rprofile.R'), 'utf8'
+);
+
+test('the shipped .Rprofile block is the one of the README', () => {
+  const readme = fs.readFileSync(
+    path.join(__dirname, '..', 'README.md'), 'utf8'
+  );
+  const setup = readme.slice(readme.indexOf('### 1. Load krplot in R'));
+  assert.strictEqual(setup.match(/```r\r?\n([\s\S]*?)```/)[1], BLOCK);
+});
+
+test('isLegacyRprofile detects the block of a previous version', () => {
+  assert.strictEqual(isLegacyRprofile(LEGACY_BLOCK), true);
+  assert.strictEqual(isLegacyRprofile(BLOCK), false);
+  assert.strictEqual(isLegacyRprofile('options(digits = 4)\n'), false);
+  assert.strictEqual(isLegacyRprofile(''), false);
+});
+
+test('rprofileFiles follows the R lookup order', () => {
+  assert.deepStrictEqual(
+    rprofileFiles({
+      env: {}, home: '/home/u', platform: 'linux', folders: ['/ws']
+    }),
+    [path.join('/ws', '.Rprofile'), path.join('/home/u', '.Rprofile')]
+  );
+  assert.deepStrictEqual(
+    rprofileFiles({
+      env: { R_PROFILE_USER: '/etc/r/profile' }, home: '/home/u',
+      platform: 'linux'
+    }),
+    ['/etc/r/profile', path.join('/home/u', '.Rprofile')]
+  );
+});
+
+test('rprofileFiles looks in Documents on Windows', () => {
+  const files = rprofileFiles({
+    env: {}, home: 'C:/Users/u', platform: 'win32'
+  });
+  assert.ok(files.includes(path.join('C:/Users/u', 'Documents', '.Rprofile')));
+  assert.ok(files.includes(path.join('C:/Users/u', '.Rprofile')));
+});
+
+test('findLegacyRprofile returns the first file with the old block', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'krplot-'));
+  const current = path.join(dir, 'current');
+  const legacy = path.join(dir, 'legacy');
+  fs.writeFileSync(current, BLOCK);
+  fs.writeFileSync(legacy, LEGACY_BLOCK);
+  const missing = path.join(dir, 'missing');
+  assert.strictEqual(findLegacyRprofile([missing, current, legacy]), legacy);
+  assert.strictEqual(findLegacyRprofile([missing, current]), undefined);
+  fs.rmSync(dir, { recursive: true });
 });
